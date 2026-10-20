@@ -16,7 +16,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Set up Node.js
@@ -38,7 +38,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Set up Node.js
@@ -47,8 +47,8 @@ jobs:
         node-version: '20'
     - name: Lint changed Markdown files
       env:
-        DIFF_BASE: e9034539e972ab7e15c48f3565b0e941b5af6966
-        DIFF_HEAD: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
       run: |
         git diff --check "$DIFF_BASE" "$DIFF_HEAD" -- website/docs
         markdown_files=()
@@ -79,7 +79,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Set up Go
@@ -103,7 +103,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
@@ -125,7 +125,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
@@ -134,8 +134,8 @@ jobs:
         cache: false
     - name: Run basic checks
       env:
-        DIFF_BASE: e9034539e972ab7e15c48f3565b0e941b5af6966
-        DIFF_HEAD: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
       run: bash scripts/basic-check.sh
     name: baseline / basic-check
     timeout-minutes: 20
@@ -147,7 +147,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Setup Go
@@ -157,8 +157,8 @@ jobs:
         cache: false
     - name: Checking the docs content
       env:
-        DIFF_BASE: e9034539e972ab7e15c48f3565b0e941b5af6966
-        DIFF_HEAD: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
       run: |
         while IFS= read -r -d '' changed_file; do
           if [[ -f "$changed_file" ]]; then
@@ -178,7 +178,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Set up Node.js
@@ -200,7 +200,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Set up Node.js
@@ -209,8 +209,8 @@ jobs:
         node-version: '20'
     - name: Lint changed Markdown files
       env:
-        DIFF_BASE: e9034539e972ab7e15c48f3565b0e941b5af6966
-        DIFF_HEAD: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
       run: |
         git diff --check "$DIFF_BASE" "$DIFF_HEAD" -- website/docs
         markdown_files=()
@@ -241,7 +241,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Set up Go
@@ -279,7 +279,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
@@ -313,13 +313,13 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Run basic checks
       env:
-        DIFF_BASE: e9034539e972ab7e15c48f3565b0e941b5af6966
-        DIFF_HEAD: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
       run: bash scripts/basic-check.sh
     name: optimized / basic-check
     timeout-minutes: 20
@@ -331,7 +331,7 @@ jobs:
     - name: Check out event commit
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
         persist-credentials: false
         fetch-depth: 2
     - name: Setup Go
@@ -341,8 +341,8 @@ jobs:
         cache: false
     - name: Checking the docs content
       env:
-        DIFF_BASE: e9034539e972ab7e15c48f3565b0e941b5af6966
-        DIFF_HEAD: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
       run: |
         checker="$RUNNER_TEMP/document-check"
         go build -o "$checker" scripts/document/document_check.go
