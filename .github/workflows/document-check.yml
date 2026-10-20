@@ -127,9 +127,23 @@ jobs:
         with:
           go-version-file: .go-version
           cache: false
+      - name: Cache misspell binary
+        id: tool-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/terraform-doc-tools/misspell
+          key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-misspell-v0.3.4-${{ hashFiles('.go-version') }}
+      - name: Install misspell
+        if: steps.tool-cache.outputs.cache-hit != 'true'
+        env:
+          GOBIN: ${{ runner.temp }}/doc-tool-bin
+        run: |
+          mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+          go install github.com/client9/misspell/cmd/misspell@v0.3.4
+          cp "$GOBIN/misspell" "$HOME/.cache/terraform-doc-tools/misspell"
       - name: misspell
         run: |
-          go run github.com/client9/misspell/cmd/misspell@v0.3.4 \
+          "$HOME/.cache/terraform-doc-tools/misspell" \
             -error \
             -i 'bussiness,protocal,attemps,alltime,transfering' \
             website/docs
@@ -150,11 +164,23 @@ jobs:
         with:
           go-version-file: .go-version
           cache: false
+      - name: Cache terrafmt binary
+        id: tool-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/terraform-doc-tools/terrafmt
+          key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-terrafmt-v0.5.7-${{ hashFiles('.go-version') }}
+      - name: Install terrafmt
+        if: steps.tool-cache.outputs.cache-hit != 'true'
+        env:
+          GOBIN: ${{ runner.temp }}/doc-tool-bin
+        run: |
+          mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+          go install github.com/katbyte/terrafmt@v0.5.7
+          cp "$GOBIN/terrafmt" "$HOME/.cache/terraform-doc-tools/terrafmt"
       - name: terrafmt
         run: |
-          export PATH="$PATH:$(go env GOPATH)/bin"
-          go install github.com/katbyte/terrafmt@v0.5.7
-          terrafmt diff ./website --check --pattern '*.markdown'
+          "$HOME/.cache/terraform-doc-tools/terrafmt" diff ./website --check --pattern '*.markdown'
 
   basic-check:
     needs: route
@@ -178,10 +204,6 @@ jobs:
           CI_BASE_REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           CI_BASE_REF: ${{ github.ref_name }}
         run: scripts/ci/resolve-change-range.sh >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: .go-version
-          cache: false
       - name: Run basic checks
         env:
           DIFF_BASE: ${{ steps.change-range.outputs.diff_base }}
@@ -220,9 +242,11 @@ jobs:
           DIFF_BASE: ${{ steps.change-range.outputs.diff_base }}
           DIFF_HEAD: ${{ steps.change-range.outputs.diff_head }}
         run: |
+          checker="$RUNNER_TEMP/document-check"
+          go build -o "$checker" scripts/document/document_check.go
           while IFS= read -r -d '' changed_file; do
             if [[ -f "$changed_file" ]]; then
-              go run scripts/document/document_check.go "$changed_file"
+              "$checker" "$changed_file"
             fi
           done < <(
             git diff --name-only -z --diff-filter=ACMR \
