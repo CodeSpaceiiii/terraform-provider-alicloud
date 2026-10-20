@@ -1,0 +1,109 @@
+name: Validate grouped documentation implementation
+'on':
+  push:
+    branches:
+    - codex/ci-check-speed-experiment
+    paths:
+    - .github/workflows/document-grouping-validation.yml
+permissions:
+  contents: read
+jobs:
+  docs-node:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Check out event commit
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: 118297090f435c414fc6400626943a40371e9a38
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Test parallel check runner
+      env:
+        PYTHONDONTWRITEBYTECODE: '1'
+      run: python3 -m unittest discover -s scripts/ci -p test_document_checks.py
+    - name: Retain the exact PR implementation
+      run: cp scripts/ci/run-document-checks.py "$RUNNER_TEMP/run-document-checks.py"
+    - name: Check out the measured snapshot-lock sample
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Set up Node.js
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      with:
+        node-version: '20'
+    - name: Run documentation checks in parallel
+      env:
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
+      run: python3 "$RUNNER_TEMP/run-document-checks.py" --group node
+    name: docs-node
+    timeout-minutes: 20
+  docs-go:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Check out event commit
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: 118297090f435c414fc6400626943a40371e9a38
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Retain the exact PR implementation
+      run: cp scripts/ci/run-document-checks.py "$RUNNER_TEMP/run-document-checks.py"
+    - name: Check out the measured snapshot-lock sample
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Setup Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+      with:
+        go-version-file: .go-version
+        cache: false
+    - name: Cache misspell binary
+      id: misspell-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/terraform-doc-tools/misspell
+        key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-misspell-v0.3.4-${{ hashFiles('.go-version') }}
+    - name: Install misspell
+      if: steps.misspell-cache.outputs.cache-hit != 'true'
+      env:
+        GOBIN: ${{ runner.temp }}/doc-tool-bin
+      run: 'mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+
+        go install github.com/client9/misspell/cmd/misspell@v0.3.4
+
+        cp "$GOBIN/misspell" "$HOME/.cache/terraform-doc-tools/misspell"
+
+        '
+    - name: Cache terrafmt binary
+      id: terrafmt-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/terraform-doc-tools/terrafmt
+        key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-terrafmt-v0.5.7-${{ hashFiles('.go-version') }}
+    - name: Install terrafmt
+      if: steps.terrafmt-cache.outputs.cache-hit != 'true'
+      env:
+        GOBIN: ${{ runner.temp }}/doc-tool-bin
+      run: 'mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+
+        go install github.com/katbyte/terrafmt@v0.5.7
+
+        cp "$GOBIN/terrafmt" "$HOME/.cache/terraform-doc-tools/terrafmt"
+
+        '
+    - name: Run documentation checks in parallel
+      env:
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
+      run: python3 "$RUNNER_TEMP/run-document-checks.py" --group go
+    name: docs-go
+    timeout-minutes: 20
