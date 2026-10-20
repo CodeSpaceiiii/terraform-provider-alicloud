@@ -1,4 +1,4 @@
-# Fork-only A/B experiment. Both variants use the same frozen upstream code.
+# Fork-only experiment: same six checks as 6, 2, or 1 jobs.
 name: CI Speed Experiment
 'on':
   push:
@@ -8,168 +8,6 @@ name: CI Speed Experiment
 permissions:
   contents: read
 jobs:
-  baseline-markdown-link:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - name: Check out event commit
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
-        persist-credentials: false
-        fetch-depth: 2
-    - name: Set up Node.js
-      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
-      with:
-        node-version: '20'
-    - name: Check Markdown links
-      run: |
-        find website/docs -type f -name '*.md' -print0 |
-          xargs -0 -r npx --yes markdown-link-check@3.14.2 \
-            --quiet --verbose --config .markdown-link-check.json
-    name: baseline / markdown-link
-    timeout-minutes: 20
-  baseline-markdown-lint:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - name: Check out event commit
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
-        persist-credentials: false
-        fetch-depth: 2
-    - name: Set up Node.js
-      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
-      with:
-        node-version: '20'
-    - name: Lint changed Markdown files
-      env:
-        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
-        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
-      run: |
-        git diff --check "$DIFF_BASE" "$DIFF_HEAD" -- website/docs
-        markdown_files=()
-        while IFS= read -r -d '' changed_file; do
-          if [[ -f "$changed_file" ]] &&
-            [[ "$changed_file" == *.md || "$changed_file" == *.markdown ]]; then
-            markdown_files+=("$changed_file")
-          fi
-        done < <(
-          git diff --name-only -z --diff-filter=ACMR \
-            "$DIFF_BASE" "$DIFF_HEAD" -- website/docs
-        )
-        if (( ${#markdown_files[@]} == 0 )); then
-          echo "No Markdown files changed."
-          exit 0
-        fi
-        npx --yes markdownlint-cli@0.47.0 \
-          --config .github/markdownlint/website-docs.json \
-          --rules .github/markdownlint/rules/note-attachment.js \
-          -- "${markdown_files[@]}"
-    name: baseline / markdown-lint
-    timeout-minutes: 20
-  baseline-misspell:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - name: Check out event commit
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
-        persist-credentials: false
-        fetch-depth: 2
-    - name: Set up Go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
-      with:
-        go-version-file: .go-version
-        cache: false
-    - name: misspell
-      run: |
-        go run github.com/client9/misspell/cmd/misspell@v0.3.4 \
-          -error \
-          -i 'bussiness,protocal,attemps,alltime,transfering' \
-          website/docs
-    name: baseline / misspell
-    timeout-minutes: 20
-  baseline-terrafmt:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - name: Check out event commit
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
-        persist-credentials: false
-        fetch-depth: 2
-    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
-      with:
-        go-version-file: .go-version
-        cache: false
-    - name: terrafmt
-      run: |
-        export PATH="$PATH:$(go env GOPATH)/bin"
-        go install github.com/katbyte/terrafmt@v0.5.7
-        terrafmt diff ./website --check --pattern '*.markdown'
-    name: baseline / terrafmt
-    timeout-minutes: 20
-  baseline-basic-check:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - name: Check out event commit
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
-        persist-credentials: false
-        fetch-depth: 2
-    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
-      with:
-        go-version-file: .go-version
-        cache: false
-    - name: Run basic checks
-      env:
-        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
-        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
-      run: bash scripts/basic-check.sh
-    name: baseline / basic-check
-    timeout-minutes: 20
-  baseline-Content:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - name: Check out event commit
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
-        persist-credentials: false
-        fetch-depth: 2
-    - name: Setup Go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
-      with:
-        go-version-file: .go-version
-        cache: false
-    - name: Checking the docs content
-      env:
-        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
-        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
-      run: |
-        while IFS= read -r -d '' changed_file; do
-          if [[ -f "$changed_file" ]]; then
-            go run scripts/document/document_check.go "$changed_file"
-          fi
-        done < <(
-          git diff --name-only -z --diff-filter=ACMR \
-            "$DIFF_BASE" "$DIFF_HEAD" -- website/docs
-        )
-    name: baseline / Content
-    timeout-minutes: 20
   optimized-markdown-link:
     runs-on: ubuntu-latest
     permissions:
@@ -356,3 +194,239 @@ jobs:
         )
     name: optimized / Content
     timeout-minutes: 20
+  merged-node:
+    name: merged-two / docs-node
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+    - name: Check out event commit
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Set up Node.js
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      with:
+        node-version: '20'
+    - name: Run all checks in parallel and collect every result
+      env:
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
+      run: |
+        python3 - <<'PYTHON'
+        import json, os, pathlib, subprocess, tempfile, time
+        checks = {'markdown-link': "find website/docs -type f -name '*.md' -print0 |\n  xargs -0 -r npx --yes markdown-link-check@3.14.2 \\\n    --quiet --verbose --config .markdown-link-check.json\n", 'markdown-lint': 'git diff --check "$DIFF_BASE" "$DIFF_HEAD" -- website/docs\nmarkdown_files=()\nwhile IFS= read -r -d \'\' changed_file; do\n  if [[ -f "$changed_file" ]] &&\n    [[ "$changed_file" == *.md || "$changed_file" == *.markdown ]]; then\n    markdown_files+=("$changed_file")\n  fi\ndone < <(\n  git diff --name-only -z --diff-filter=ACMR \\\n    "$DIFF_BASE" "$DIFF_HEAD" -- website/docs\n)\nif (( ${#markdown_files[@]} == 0 )); then\n  echo "No Markdown files changed."\n  exit 0\nfi\nnpx --yes markdownlint-cli@0.47.0 \\\n  --config .github/markdownlint/website-docs.json \\\n  --rules .github/markdownlint/rules/note-attachment.js \\\n  -- "${markdown_files[@]}"\n'}
+        folder = pathlib.Path(tempfile.mkdtemp(prefix="ci-checks-"))
+        processes = []
+        for name, command in checks.items():
+            log = folder / (name + ".log")
+            stream = log.open("w")
+            started = time.monotonic()
+            process = subprocess.Popen(["bash", "-e", "-o", "pipefail", "-c", command], stdout=stream, stderr=subprocess.STDOUT)
+            processes.append((name, process, stream, log, started))
+        # Poll every child so measured finish times do not depend on wait order.
+        results = {}
+        while len(results) != len(processes):
+            for name, process, stream, log, started in processes:
+                if name in results:
+                    continue
+                code = process.poll()
+                if code is None:
+                    continue
+                results[name] = {"exitCode": code, "seconds": round(time.monotonic() - started, 3)}
+                stream.close()
+            time.sleep(0.05)
+        for name, process, stream, log, started in processes:
+            print("::group::" + name + " " + json.dumps(results[name]))
+            print(log.read_text(errors="replace"))
+            print("::endgroup::")
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary:
+            with open(summary, "a") as out:
+                out.write("| Check | Exit code | Execution seconds |\n|---|---:|---:|\n")
+                for name, result in results.items():
+                    out.write(f"| {name} | {result['exitCode']} | {result['seconds']} |\n")
+        print("CHECK_RESULTS=" + json.dumps(results))
+        raise SystemExit(1 if any(result["exitCode"] != 0 for result in results.values()) else 0)
+        PYTHON
+  merged-go:
+    name: merged-two / docs-go
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+    - name: Check out event commit
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Setup Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+      with:
+        go-version-file: .go-version
+        cache: false
+    - name: Cache misspell binary
+      id: misspell-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/terraform-doc-tools/misspell
+        key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-misspell-v0.3.4-${{ hashFiles('.go-version') }}
+    - name: Install misspell
+      if: steps.misspell-cache.outputs.cache-hit != 'true'
+      env:
+        GOBIN: ${{ runner.temp }}/doc-tool-bin
+      run: |
+        mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+        go install github.com/client9/misspell/cmd/misspell@v0.3.4
+        cp "$GOBIN/misspell" "$HOME/.cache/terraform-doc-tools/misspell"
+    - name: Cache terrafmt binary
+      id: terrafmt-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/terraform-doc-tools/terrafmt
+        key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-terrafmt-v0.5.7-${{ hashFiles('.go-version') }}
+    - name: Install terrafmt
+      if: steps.terrafmt-cache.outputs.cache-hit != 'true'
+      env:
+        GOBIN: ${{ runner.temp }}/doc-tool-bin
+      run: |
+        mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+        go install github.com/katbyte/terrafmt@v0.5.7
+        cp "$GOBIN/terrafmt" "$HOME/.cache/terraform-doc-tools/terrafmt"
+    - name: Run all checks in parallel and collect every result
+      env:
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
+      run: |
+        python3 - <<'PYTHON'
+        import json, os, pathlib, subprocess, tempfile, time
+        checks = {'basic-check': 'bash scripts/basic-check.sh', 'Content': 'checker="$RUNNER_TEMP/document-check"\ngo build -o "$checker" scripts/document/document_check.go\nwhile IFS= read -r -d \'\' changed_file; do\n  if [[ -f "$changed_file" ]]; then\n    "$checker" "$changed_file"\n  fi\ndone < <(\n  git diff --name-only -z --diff-filter=ACMR \\\n    "$DIFF_BASE" "$DIFF_HEAD" -- website/docs\n)\n', 'misspell': '"$HOME/.cache/terraform-doc-tools/misspell" \\\n  -error \\\n  -i \'bussiness,protocal,attemps,alltime,transfering\' \\\n  website/docs\n', 'terrafmt': '"$HOME/.cache/terraform-doc-tools/terrafmt" diff ./website --check --pattern \'*.markdown\'\n'}
+        folder = pathlib.Path(tempfile.mkdtemp(prefix="ci-checks-"))
+        processes = []
+        for name, command in checks.items():
+            log = folder / (name + ".log")
+            stream = log.open("w")
+            started = time.monotonic()
+            process = subprocess.Popen(["bash", "-e", "-o", "pipefail", "-c", command], stdout=stream, stderr=subprocess.STDOUT)
+            processes.append((name, process, stream, log, started))
+        # Poll every child so measured finish times do not depend on wait order.
+        results = {}
+        while len(results) != len(processes):
+            for name, process, stream, log, started in processes:
+                if name in results:
+                    continue
+                code = process.poll()
+                if code is None:
+                    continue
+                results[name] = {"exitCode": code, "seconds": round(time.monotonic() - started, 3)}
+                stream.close()
+            time.sleep(0.05)
+        for name, process, stream, log, started in processes:
+            print("::group::" + name + " " + json.dumps(results[name]))
+            print(log.read_text(errors="replace"))
+            print("::endgroup::")
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary:
+            with open(summary, "a") as out:
+                out.write("| Check | Exit code | Execution seconds |\n|---|---:|---:|\n")
+                for name, result in results.items():
+                    out.write(f"| {name} | {result['exitCode']} | {result['seconds']} |\n")
+        print("CHECK_RESULTS=" + json.dumps(results))
+        raise SystemExit(1 if any(result["exitCode"] != 0 for result in results.values()) else 0)
+        PYTHON
+  merged-all:
+    name: merged-one / docs-all
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+    - name: Check out event commit
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: e515c3c37b515e32c6aeec328d5109bc505f3713
+        persist-credentials: false
+        fetch-depth: 2
+    - name: Set up Node.js
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+      with:
+        node-version: '20'
+    - name: Setup Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+      with:
+        go-version-file: .go-version
+        cache: false
+    - name: Cache misspell binary
+      id: misspell-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/terraform-doc-tools/misspell
+        key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-misspell-v0.3.4-${{ hashFiles('.go-version') }}
+    - name: Install misspell
+      if: steps.misspell-cache.outputs.cache-hit != 'true'
+      env:
+        GOBIN: ${{ runner.temp }}/doc-tool-bin
+      run: |
+        mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+        go install github.com/client9/misspell/cmd/misspell@v0.3.4
+        cp "$GOBIN/misspell" "$HOME/.cache/terraform-doc-tools/misspell"
+    - name: Cache terrafmt binary
+      id: terrafmt-cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: ~/.cache/terraform-doc-tools/terrafmt
+        key: doc-tool-v1-${{ runner.os }}-${{ runner.arch }}-terrafmt-v0.5.7-${{ hashFiles('.go-version') }}
+    - name: Install terrafmt
+      if: steps.terrafmt-cache.outputs.cache-hit != 'true'
+      env:
+        GOBIN: ${{ runner.temp }}/doc-tool-bin
+      run: |
+        mkdir -p "$GOBIN" "$HOME/.cache/terraform-doc-tools"
+        go install github.com/katbyte/terrafmt@v0.5.7
+        cp "$GOBIN/terrafmt" "$HOME/.cache/terraform-doc-tools/terrafmt"
+    - name: Run all checks in parallel and collect every result
+      env:
+        DIFF_BASE: 1ed20c54e435cd24bbe6e465dae2525292dc61e6
+        DIFF_HEAD: e515c3c37b515e32c6aeec328d5109bc505f3713
+      run: |
+        python3 - <<'PYTHON'
+        import json, os, pathlib, subprocess, tempfile, time
+        checks = {'markdown-link': "find website/docs -type f -name '*.md' -print0 |\n  xargs -0 -r npx --yes markdown-link-check@3.14.2 \\\n    --quiet --verbose --config .markdown-link-check.json\n", 'markdown-lint': 'git diff --check "$DIFF_BASE" "$DIFF_HEAD" -- website/docs\nmarkdown_files=()\nwhile IFS= read -r -d \'\' changed_file; do\n  if [[ -f "$changed_file" ]] &&\n    [[ "$changed_file" == *.md || "$changed_file" == *.markdown ]]; then\n    markdown_files+=("$changed_file")\n  fi\ndone < <(\n  git diff --name-only -z --diff-filter=ACMR \\\n    "$DIFF_BASE" "$DIFF_HEAD" -- website/docs\n)\nif (( ${#markdown_files[@]} == 0 )); then\n  echo "No Markdown files changed."\n  exit 0\nfi\nnpx --yes markdownlint-cli@0.47.0 \\\n  --config .github/markdownlint/website-docs.json \\\n  --rules .github/markdownlint/rules/note-attachment.js \\\n  -- "${markdown_files[@]}"\n', 'misspell': '"$HOME/.cache/terraform-doc-tools/misspell" \\\n  -error \\\n  -i \'bussiness,protocal,attemps,alltime,transfering\' \\\n  website/docs\n', 'terrafmt': '"$HOME/.cache/terraform-doc-tools/terrafmt" diff ./website --check --pattern \'*.markdown\'\n', 'basic-check': 'bash scripts/basic-check.sh', 'Content': 'checker="$RUNNER_TEMP/document-check"\ngo build -o "$checker" scripts/document/document_check.go\nwhile IFS= read -r -d \'\' changed_file; do\n  if [[ -f "$changed_file" ]]; then\n    "$checker" "$changed_file"\n  fi\ndone < <(\n  git diff --name-only -z --diff-filter=ACMR \\\n    "$DIFF_BASE" "$DIFF_HEAD" -- website/docs\n)\n'}
+        folder = pathlib.Path(tempfile.mkdtemp(prefix="ci-checks-"))
+        processes = []
+        for name, command in checks.items():
+            log = folder / (name + ".log")
+            stream = log.open("w")
+            started = time.monotonic()
+            process = subprocess.Popen(["bash", "-e", "-o", "pipefail", "-c", command], stdout=stream, stderr=subprocess.STDOUT)
+            processes.append((name, process, stream, log, started))
+        # Poll every child so measured finish times do not depend on wait order.
+        results = {}
+        while len(results) != len(processes):
+            for name, process, stream, log, started in processes:
+                if name in results:
+                    continue
+                code = process.poll()
+                if code is None:
+                    continue
+                results[name] = {"exitCode": code, "seconds": round(time.monotonic() - started, 3)}
+                stream.close()
+            time.sleep(0.05)
+        for name, process, stream, log, started in processes:
+            print("::group::" + name + " " + json.dumps(results[name]))
+            print(log.read_text(errors="replace"))
+            print("::endgroup::")
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary:
+            with open(summary, "a") as out:
+                out.write("| Check | Exit code | Execution seconds |\n|---|---:|---:|\n")
+                for name, result in results.items():
+                    out.write(f"| {name} | {result['exitCode']} | {result['seconds']} |\n")
+        print("CHECK_RESULTS=" + json.dumps(results))
+        raise SystemExit(1 if any(result["exitCode"] != 0 for result in results.values()) else 0)
+        PYTHON
